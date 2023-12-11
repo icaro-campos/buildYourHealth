@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "716707768667",
+    "project_id": "build-your-health",
+    "storage_bucket": "build-your-health.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:716707768667:android:754a3eb1367ab865d7927e",
+        "android_client_info": {
+          "package_name": "br.itcampos.buildyourhealth"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAITCj2QHiIgHUTEnKSAlVPYRthr_9wX2w"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

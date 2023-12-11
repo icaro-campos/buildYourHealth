@@ -1,0 +1,37 @@
+<resources>
+    <string name="app_name">Build Your Health</string>
+    <string name="hello">Olá, </string>
+    <string name="ok">Ok</string>
+    <string name="create_your_account">Crie a sua conta</string>
+    <string name="welcome_back">Bem-vindo de volta</string>
+    <string name="first_name">Nome</string>
+    <string name="email">Email</string>
+    <string name="password">Senha</string>
+    <string name="hide_password">Hide Password</string>
+    <string name="show_password">Showing Password</string>
+    <string name="register">Cadastrar</string>
+    <string name="register_your_account">Cadastre-se</string>
+    <string name="go_to_login">Já tem uma conta? Login</string>
+    <string name="login">Login</string>
+    <string name="forgot_password">Esqueceu a senha?</string>
+    <string name="log_in">Entrar</string>
+    <string name="have_an_account">"Já tem uma conta? "</string>
+    <string name="dont_have_an_account">"Ainda não tem uma conta? "</string>
+    <string name="something_went_wrong">Algo de errado aconteceu. Por favor, tente de novo!</string>
+    <string name="request_notification_permission">Requisitar permissão</string>
+    <string name="notification_permission_title">Permissão de Notificação</string>
+    <string name="notification_permission_description">A permissão é importante para este aplicativo. Por favor, dê permissão.</string>
+    <string name="notification_permission_settings">A permissão é importante para este aplicativo. Por favor, vá até as configurações e dê permissão ao aplicativo.</string>
+    <string name="email_error">Insira um e-mail válido</string>
+    <string name="password_error">A sua senha deve ter no mínimo 6 dígitos</string>
+    <string name="empty_name">Coloque algum nome</string>
+    <string name="error_firebase_on_user_creation">Erro na criação do usuário</string>
+    <string name="error_firebase_on_user_already_exist">Usuário já existe</string>
+    <string name="unknow_error">Algum erro desconhecido aconteceu</string>
+    <string name="recovery_email_sent">Email de recuperação enviado</string>
+    <string name="you_have_not_saved_training_so_far">Você ainda não iniciou nenhum treino.\nClique no botão \"+\" para começar.</string>
+    <string name="permission_denied">Permissão negada</string>
+    <string name="insert_training_name">Insira um nome para o seu treino</string>
+    <string name="insert_training_description">Insira uma descrição</string>
+    <string name="insert_training_date">Insira uma data</string>
+</resources>
