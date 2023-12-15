@@ -9,11 +9,21 @@ import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
+import javax.inject.Qualifier
 
 @Module
 @InstallIn(SingletonComponent::class)
-object FirebaseModule {
+object AppModule {
     @Provides fun auth() : FirebaseAuth = Firebase.auth
 
     @Provides fun firestore() : FirebaseFirestore = Firebase.firestore
+
+    @Provides @IoDispatcher fun dispatcher() : CoroutineDispatcher = Dispatchers.IO
+
 }
+
+@Retention
+@Qualifier
+annotation class IoDispatcher

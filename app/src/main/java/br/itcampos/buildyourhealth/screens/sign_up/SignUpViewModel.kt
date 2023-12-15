@@ -2,20 +2,19 @@ package br.itcampos.buildyourhealth.screens.sign_up
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import br.itcampos.buildyourhealth.R
-import br.itcampos.buildyourhealth.Routes.HOME_SCREEN
-import br.itcampos.buildyourhealth.Routes.LOGIN_SCREEN
-import br.itcampos.buildyourhealth.Routes.SIGNUP_SCREEN
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.itcampos.buildyourhealth.R.string as AppText
 import br.itcampos.buildyourhealth.commom.ext.isValidEmail
 import br.itcampos.buildyourhealth.commom.ext.isValidPassword
 import br.itcampos.buildyourhealth.commom.snackbar.SnackbarManager
 import br.itcampos.buildyourhealth.model.service.AccountService
-import br.itcampos.buildyourhealth.model.service.LogService
 import br.itcampos.buildyourhealth.model.service.UserStorageService
-import br.itcampos.buildyourhealth.screens.BuildYourHealthViewModel
+import br.itcampos.buildyourhealth.navigation.Routes.HOME_SCREEN
+import br.itcampos.buildyourhealth.navigation.Routes.SIGNUP_SCREEN
 import com.google.firebase.auth.FirebaseAuthException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 const val TAG = "SignUpViewModel"
@@ -24,8 +23,8 @@ const val TAG = "SignUpViewModel"
 class SignUpViewModel @Inject constructor(
     private val accountService: AccountService,
     private val userStorageService: UserStorageService,
-    logService: LogService
-) : BuildYourHealthViewModel(logService) {
+    //logService: LogService
+) : ViewModel() {
 
     var uiState = mutableStateOf(SignUpUiState())
         private set
@@ -69,7 +68,7 @@ class SignUpViewModel @Inject constructor(
 
         uiState.value = uiState.value.copy(isLoading = true)
 
-        launchCatching {
+        viewModelScope.launch() {
             try {
                 val uid = accountService.createAccount(email, password)
                 if (uid != null) {
@@ -80,10 +79,8 @@ class SignUpViewModel @Inject constructor(
                 }
             } catch (e: FirebaseAuthException) {
                 SnackbarManager.showMessage(AppText.error_firebase_on_user_creation)
-                Log.d(TAG, "onSignUpClick: ${e.message} -> ${e.localizedMessage}")
             } catch (e: Exception) {
                 SnackbarManager.showMessage(AppText.unknow_error)
-                Log.d(TAG, "onSignUpClick: ${e.message} -> ${e.localizedMessage}")
             }
             uiState.value = uiState.value.copy(isLoading = false)
         }

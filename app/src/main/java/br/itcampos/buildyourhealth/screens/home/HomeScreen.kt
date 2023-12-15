@@ -4,7 +4,6 @@ import android.annotation.SuppressLint
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -16,9 +15,11 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentSize
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Card
 import androidx.compose.material.FloatingActionButton
 import androidx.compose.material.Icon
+import androidx.compose.material.IconButton
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Scaffold
 import androidx.compose.material.Text
@@ -26,16 +27,27 @@ import androidx.compose.material.TopAppBar
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.primarySurface
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import br.itcampos.buildyourhealth.commom.EmptyScreen
+import br.itcampos.buildyourhealth.commom.convertDateFormat
 import br.itcampos.buildyourhealth.model.Training
+import br.itcampos.buildyourhealth.navigation.Routes.SIDE_EFFECTS_KEY
+import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_SCREEN
+import br.itcampos.buildyourhealth.ui.events.HomeScreenUiEvents
+import br.itcampos.buildyourhealth.ui.side_effects.ScreenUiSideEffect
+import br.itcampos.buildyourhealth.ui.theme.Primary
+import kotlinx.coroutines.flow.onEach
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -47,14 +59,35 @@ fun HomeScreen(
     openScreen: (String) -> Unit,
     viewModel: HomeViewModel = hiltViewModel()
 ) {
-    val trainings = viewModel.trainings.collectAsStateWithLifecycle(emptyList())
+    val uiState = viewModel.state.collectAsState().value
 
-    Log.d("HomeScreenTrainings", "Trainings received: $trainings")
+    val effects = viewModel.effect
+
+    val events = viewModel
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(key1 = SIDE_EFFECTS_KEY) {
+        effects.onEach { effect ->
+            when (effect) {
+                is ScreenUiSideEffect.ShowSnackbarMessage -> {
+                    snackbarHostState.showSnackbar(
+                        message = effect.message,
+                        duration = SnackbarDuration.Short,
+                        actionLabel = "DISMISS"
+                    )
+                }
+            }
+        }
+    }
+
+    Log.d("HomeScreenTrainings", "Trainings received: $uiState")
 
     HomeScreenContent(
-        trainings = trainings.value,
+        trainings = uiState.trainings,
         onTrainingAddClick = viewModel::onAddNewTrainingClick,
-        onTrainingClick = viewModel::onTrainingClick,
+        onDeleteTrainingClick = events,
+        //onTrainingClick = { },
         openScreen = openScreen
     )
 }
@@ -66,7 +99,8 @@ fun HomeScreenContent(
     modifier: Modifier = Modifier,
     trainings: List<Training>,
     onTrainingAddClick: ((String) -> Unit) -> Unit,
-    onTrainingClick: ((String) -> Unit, Training, String) -> Unit,
+    onDeleteTrainingClick: HomeViewModel,
+    //onTrainingClick: ((String) -> Unit, Training, String) -> Unit,
     openScreen: (String) -> Unit
 ) {
     Scaffold(
@@ -87,7 +121,9 @@ fun HomeScreenContent(
 
                 TrainingList(
                     trainings = trainings,
-                    onTrainingClick = onTrainingClick,
+                    event = onDeleteTrainingClick,
+
+                    //onTrainingClick = onTrainingClick,
                     openScreen = openScreen
                 )
             }
@@ -95,11 +131,13 @@ fun HomeScreenContent(
         floatingActionButton = {
             FloatingActionButton(
                 onClick = { onTrainingAddClick(openScreen) },
-                modifier = modifier.padding(16.dp)
+                modifier = modifier.padding(16.dp),
+                backgroundColor = Primary
             ) {
                 Icon(
                     imageVector = Icons.Default.Add,
-                    contentDescription = "Botão adicionar"
+                    contentDescription = "Botão adicionar",
+                    tint = Color.White
                 )
             }
         }
@@ -110,24 +148,28 @@ fun HomeScreenContent(
 @Composable
 fun TrainingList(
     trainings: List<Training>,
-    onTrainingClick: ((String) -> Unit, Training, String) -> Unit,
+    event: HomeViewModel,
+    //onTrainingClick: ((String) -> Unit, Training, String) -> Unit,
     openScreen: (String) -> Unit
 ) {
-    Log.d("TrainingList", "Trainings: $trainings, Number of trainings: ${trainings.size}")
+    Log.d("HomeScreenTrainings", "Trainings: $trainings, Number of trainings: ${trainings.size}")
 
     if (trainings.isEmpty()) {
         EmptyScreen(error = null)
     } else {
         LazyColumn {
-            items(trainings, key = { it.id }) { trainingItem ->
+            items(trainings) { training ->
                 TrainingListItem(
-                    training = trainingItem,
-                    onTrainingClick = { action ->
-                        onTrainingClick(
-                            openScreen,
-                            trainingItem,
-                            action
-                        )
+                    training = training,
+                    deleteTraining = { trainingId ->
+                        event.sendEvent(HomeScreenUiEvents.DeleteTraining(trainingId))
+                    },
+                    editTraining = { training ->
+                        /*event.sendEvent(
+                            HomeScreenUiEvents.UpdateTraining(
+                                openScreen = TRAINING_SCREEN,
+                                training = training
+                            )*/
                     }
                 )
             }
@@ -138,45 +180,63 @@ fun TrainingList(
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
 fun TrainingListItem(
-    training: Training,
-    onTrainingClick: (String) -> Unit,
+    deleteTraining: (String) -> Unit,
+    editTraining: (Training) -> Unit,
+    training: Training
 ) {
     Log.d("HomeScreenTrainings", "Training item: $training")
 
-    val formatter = DateTimeFormatter.ofPattern("EEE, dd MMM yyyy", Locale.ENGLISH)
-    val date = LocalDate.parse(training.date.toString(), formatter)
+    val formatter = DateTimeFormatter.ofPattern("dd/MM/yyyy", Locale.ENGLISH)
+    val date = LocalDate.parse(training.date, formatter)
+    val dateString = convertDateFormat(date.toString())
     Card(
         modifier = Modifier
             .fillMaxWidth()
-            .clickable { onTrainingClick(training.id) }
-            .padding(8.dp),
-        elevation = 4.dp
+            .padding(12.dp),
+        shape = RoundedCornerShape(8.dp)
     ) {
-        Column(
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(12.dp),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            Text(text = training.name, style = MaterialTheme.typography.h6)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(text = training.description, style = MaterialTheme.typography.body2)
-            Spacer(modifier = Modifier.height(4.dp))
-            Text(
-                text = date.format(DateTimeFormatter.ofPattern("dd/MM/yyyy")),
-                style = MaterialTheme.typography.caption
-            )
-        }
-        Row(horizontalArrangement = Arrangement.End) {
-            Icon(
-                imageVector = Icons.Default.Delete,
-                contentDescription = "Botão de deletar",
-                tint = Color.Red,
-                modifier = Modifier
-                    .clickable {
+            Column {
+                Text(text = training.name, style = MaterialTheme.typography.h6)
 
-                    }
-                    .padding(8.dp)
-            )
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(text = training.description, style = MaterialTheme.typography.body2)
+
+                Spacer(modifier = Modifier.height(4.dp))
+
+                Text(
+                    text = dateString,
+                    style = MaterialTheme.typography.caption
+                )
+            }
+            Column(
+                verticalArrangement = Arrangement.SpaceAround
+            ) {
+                IconButton(
+                    onClick = { deleteTraining(training.trainingId) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = "Botão de deletar",
+                    )
+                }
+
+                IconButton(
+                    onClick = { editTraining(training) }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Botão de editar",
+                    )
+                }
+
+            }
         }
     }
 }

@@ -1,113 +1,141 @@
 package br.itcampos.buildyourhealth.model.service.impl
 
 import android.util.Log
-import br.itcampos.buildyourhealth.model.Exercise
+import br.itcampos.buildyourhealth.commom.Result
+import br.itcampos.buildyourhealth.commom.convertDateFormat
 import br.itcampos.buildyourhealth.model.Training
 import br.itcampos.buildyourhealth.model.service.AccountService
 import br.itcampos.buildyourhealth.model.service.TrainingService
+import br.itcampos.buildyourhealth.model.service.module.IoDispatcher
 import com.google.firebase.firestore.FirebaseFirestore
-import com.google.firebase.firestore.toObject
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.SharingStarted
-import kotlinx.coroutines.flow.flatMapLatest
-import kotlinx.coroutines.flow.flow
-import kotlinx.coroutines.flow.onCompletion
-import kotlinx.coroutines.flow.onStart
-import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.tasks.await
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Inject
 
 class TrainingServiceImpl @Inject constructor(
-    private val accountService: AccountService,
-    private val firestore: FirebaseFirestore,
-    private val scope: CoroutineScope
+    private val user: AccountService,
+    private val buildYourHealthAppDb: FirebaseFirestore,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : TrainingService {
 
-    override val trainings: Flow<List<Training>>
-        get() = accountService.currentUser.flatMapLatest { user ->
-            if (user != null) {
-                val userId = user.uid
-                Log.d(TAG, "Fetching trainings for user: $userId")
+    override suspend fun addTraining(
+        name: String,
+        description: String,
+        date: String
+    ): Result<Unit> {
+        return try {
+            val userId = user.currentUserId
+            withContext(ioDispatcher) {
+                val training = hashMapOf(
+                    "userId" to userId,
+                    "name" to name,
+                    "description" to description,
+                    "date" to date,
+                )
+                Log.d(TAG, "Dados convertidos")
 
-                flow {
-                    val snapshot = firestore.collection(TRAINING_COLLECTION)
+                val addTaskTimeout = withTimeoutOrNull(10000L) {
+                    buildYourHealthAppDb.collection(TRAINING_COLLECTION)
+                        .add(training)
+                }
+                Log.d(TAG, "Dados adicionados: $training")
+
+                if (addTaskTimeout == null) {
+                    Log.d(TAG, "Verifique a sua internet")
+
+                    Result.Failure(IllegalStateException("Verifique a sua internet"))
+                }
+
+                Result.Success(Unit)
+            }
+        } catch (exception: Exception) {
+            Log.d(TAG, "$exception")
+
+            Result.Failure(exception = exception)
+        }
+    }
+
+    override suspend fun getAllTrainings(): Result<List<Training>> {
+        return try {
+            val userId = user.currentUserId
+            withContext(ioDispatcher) {
+                val fetchingTrainingsTimeout = withTimeoutOrNull(10000L) {
+                    buildYourHealthAppDb.collection(TRAINING_COLLECTION)
                         .whereEqualTo(USER_ID_FIELD, userId)
                         .get()
                         .await()
-
-                    val trainings = snapshot.toObjects(Training::class.java)
-                    emit(trainings)
+                        .documents.map { document ->
+                            Training(
+                                trainingId = document.id,
+                                userId = document.getString("userId") ?: "",
+                                name = document.getString("name") ?: "",
+                                description = document.getString("description") ?: "",
+                                date = document.getString("date") ?: ""
+                            )
+                        }
                 }
-                    .onStart { Log.d(TAG, "Fetching trainings started") }
-                    .onCompletion { Log.d(TAG, "Fetching trainings completed") }
-            } else {
-                flow {
-                    emit(emptyList<Training>())
+                if (fetchingTrainingsTimeout == null) {
+                    Result.Failure(IllegalStateException("Verifique a sua internet."))
                 }
-            }
-        }.stateIn(
-            scope = scope,
-            started = SharingStarted.WhileSubscribed(),
-            initialValue = emptyList()
-        )
 
-
-    override suspend fun getTrainingById(trainingId: String): Training? =
-        firestore.collection(TRAINING_COLLECTION).document(trainingId).get().await().toObject()
-
-
-    override suspend fun addTraining(training: Training) {
-        firestore.collection(TRAINING_COLLECTION).add(training).await().id
-    }
-
-    override suspend fun updateTraining(training: Training) {
-        try {
-            if (training.id.isNotEmpty()) {
-                firestore.collection(TRAINING_COLLECTION)
-                    .document(training.id)
-                    .set(training)
-                    .await()
-            } else {
-                Log.e(TAG, "O ID do treino está vazio, não pode atualizar")
+                Result.Success(fetchingTrainingsTimeout?.toList() ?: emptyList())
             }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao atualizar Training: ${e.localizedMessage}")
+            Result.Failure(exception = e)
         }
     }
 
-    override suspend fun deleteTraining(trainingId: String) {
-        try {
-            firestore.collection(TRAINING_COLLECTION)
-                .document(trainingId)
-                .delete()
-                .await()
+    override suspend fun updateTraining(
+        trainingId: String,
+        name: String,
+        description: String,
+        date: String
+    ): Result<Unit> {
+        return try {
+            withContext(ioDispatcher) {
+                val trainingUpdated: Map<String, String> = hashMapOf(
+                    "name" to name,
+                    "description" to description,
+                    "date" to date
+                )
 
-            removeExerciseReferencesFromTraining(trainingId)
+                val updateTrainingTimeout = withTimeoutOrNull(10000L) {
+                    buildYourHealthAppDb.collection(TRAINING_COLLECTION)
+                        .document(trainingId)
+                        .update(trainingUpdated)
+                }
+
+                if (updateTrainingTimeout == null) {
+                    Result.Failure(IllegalStateException("Verifique a sua internet."))
+                }
+
+                Result.Success(Unit)
+            }
         } catch (e: Exception) {
-            Log.e(TAG, "Erro ao deletar Training: ${e.localizedMessage}")
+            Result.Failure(exception = e)
         }
     }
 
-    private suspend fun removeExerciseReferencesFromTraining(trainingId: String) {
-        try {
-            val exercises = firestore.collection(EXERCISE_COLLECTION)
-                .whereEqualTo(TRAINING_ID, trainingId)
-                .get()
-                .await()
-                .toObjects(Exercise::class.java)
 
-            for (exercise in exercises) {
-                firestore.collection(EXERCISE_COLLECTION)
-                    .document(exercise.id)
-                    .update(TRAINING_ID, null)
-                    .await()
+    override suspend fun deleteTraining(trainingId: String): Result<Unit> {
+        return try {
+            withContext(ioDispatcher) {
+                val deleteTaskTimeout = withTimeoutOrNull(10000L) {
+                    buildYourHealthAppDb.collection(TRAINING_COLLECTION)
+                        .document(trainingId)
+                        .delete()
+                }
+
+                if (deleteTaskTimeout == null) {
+                    Result.Failure(IllegalStateException("Verifique a sua internet."))
+                }
+
+                Result.Success(Unit)
             }
         } catch (e: Exception) {
-            Log.e(
-                TAG,
-                "Erro ao remover referências de exercícios do Training: ${e.localizedMessage}"
-            )
+            Result.Failure(exception = e)
         }
     }
 

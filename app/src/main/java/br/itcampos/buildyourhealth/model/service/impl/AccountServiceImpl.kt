@@ -3,8 +3,10 @@ package br.itcampos.buildyourhealth.model.service.impl
 import android.util.Log
 import br.itcampos.buildyourhealth.model.User
 import br.itcampos.buildyourhealth.model.service.AccountService
+import br.itcampos.buildyourhealth.model.service.module.IoDispatcher
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.channels.awaitClose
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.callbackFlow
@@ -15,7 +17,8 @@ const val TAG = "AccountServiceImpl"
 
 class AccountServiceImpl @Inject constructor(
     private val auth: FirebaseAuth,
-    private val firestore: FirebaseFirestore
+    private val buildYourHealthAppDb: FirebaseFirestore,
+    @IoDispatcher private val ioDispatcher: CoroutineDispatcher
 ) : AccountService {
 
     override val currentUserId: String

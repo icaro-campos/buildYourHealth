@@ -24,6 +24,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import br.itcampos.buildyourhealth.commom.BasicButton
 import br.itcampos.buildyourhealth.commom.BasicDivider
 import br.itcampos.buildyourhealth.commom.BasicTextField
+import br.itcampos.buildyourhealth.commom.CircularProgressComposable
 import br.itcampos.buildyourhealth.commom.ClickableLoginText
 import br.itcampos.buildyourhealth.commom.HeadingText
 import br.itcampos.buildyourhealth.commom.NormalText
@@ -91,7 +92,7 @@ fun LoginScreenContent(
             )
 
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = modifier.align(Alignment.CenterHorizontally))
+                CircularProgressComposable()
             }
 
             Spacer(modifier = modifier.height(20.dp))

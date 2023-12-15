@@ -1,43 +1,64 @@
 package br.itcampos.buildyourhealth.model.service.module
 
 import br.itcampos.buildyourhealth.model.service.AccountService
-import br.itcampos.buildyourhealth.model.service.ExerciseService
-import br.itcampos.buildyourhealth.model.service.LogService
 import br.itcampos.buildyourhealth.model.service.TrainingService
 import br.itcampos.buildyourhealth.model.service.UserStorageService
 import br.itcampos.buildyourhealth.model.service.impl.AccountServiceImpl
-import br.itcampos.buildyourhealth.model.service.impl.ExerciseServiceImpl
-import br.itcampos.buildyourhealth.model.service.impl.LogServiceImpl
 import br.itcampos.buildyourhealth.model.service.impl.TrainingServiceImpl
 import br.itcampos.buildyourhealth.model.service.impl.UserStorageServiceImpl
-import dagger.Binds
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.components.SingletonComponent
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CoroutineDispatcher
 import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-abstract class ServiceModule {
-    @Binds abstract fun provideAccountService(impl: AccountServiceImpl): AccountService
+object ServiceModule {
 
-    @Binds abstract fun provideLogService(impl: LogServiceImpl): LogService
-
-    @Binds abstract fun provideUserStorageService(impl: UserStorageServiceImpl): UserStorageService
-
-    @Binds
-    abstract fun provideTrainingService(
-        impl: TrainingServiceImpl
-    ): TrainingService
-
-    companion object {
-        @Singleton
-        @Provides
-        fun provideAppCoroutineScope(): CoroutineScope = CoroutineScope(Dispatchers.Default)
+    @Provides
+    @Singleton
+    fun provideAccountService(
+        auth: FirebaseAuth,
+        firebaseFirestore: FirebaseFirestore,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher
+    ): AccountService {
+        return AccountServiceImpl(
+            auth = auth,
+            buildYourHealthAppDb = firebaseFirestore,
+            ioDispatcher = ioDispatcher
+        )
     }
 
-    @Binds abstract fun provideExerciseService(impl: ExerciseServiceImpl): ExerciseService
+    @Provides
+    @Singleton
+    fun provideTrainingService(
+        accountService: AccountService,
+        firebaseFirestore: FirebaseFirestore,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher
+    ): TrainingService {
+        return TrainingServiceImpl(
+            user = accountService,
+            buildYourHealthAppDb = firebaseFirestore,
+            ioDispatcher = ioDispatcher
+        )
+    }
+
+    @Provides
+    @Singleton
+    fun provideUserService(
+        accountService: AccountService,
+        firebaseFirestore: FirebaseFirestore,
+        @IoDispatcher ioDispatcher: CoroutineDispatcher
+    ): UserStorageService {
+        return UserStorageServiceImpl(
+            auth = accountService,
+            buildYourHealthAppDb = firebaseFirestore,
+            ioDispatcher = ioDispatcher
+        )
+    }
+
 }

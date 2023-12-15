@@ -2,27 +2,25 @@ package br.itcampos.buildyourhealth.screens.login
 
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
-import br.itcampos.buildyourhealth.R
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import br.itcampos.buildyourhealth.R.string as AppText
-import br.itcampos.buildyourhealth.Routes
-import br.itcampos.buildyourhealth.Routes.HOME_SCREEN
-import br.itcampos.buildyourhealth.Routes.LOGIN_SCREEN
 import br.itcampos.buildyourhealth.commom.ext.isValidEmail
 import br.itcampos.buildyourhealth.commom.ext.isValidPassword
 import br.itcampos.buildyourhealth.commom.snackbar.SnackbarManager
 import br.itcampos.buildyourhealth.model.service.AccountService
-import br.itcampos.buildyourhealth.model.service.LogService
-import br.itcampos.buildyourhealth.screens.BuildYourHealthViewModel
+import br.itcampos.buildyourhealth.navigation.Routes.HOME_SCREEN
+import br.itcampos.buildyourhealth.navigation.Routes.LOGIN_SCREEN
 import br.itcampos.buildyourhealth.screens.sign_up.TAG
 import com.google.firebase.auth.FirebaseAuthException
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class LoginViewModel @Inject constructor(
     private val accountService: AccountService,
-    logService: LogService
-) : BuildYourHealthViewModel(logService) {
+) : ViewModel() {
 
     var uiState = mutableStateOf(LoginUiState())
         private set
@@ -54,16 +52,14 @@ class LoginViewModel @Inject constructor(
 
         uiState.value = uiState.value.copy(isLoading = true)
 
-        launchCatching {
+        viewModelScope.launch {
             try {
                 accountService.authenticate(email, password)
                 openAndPopUp(HOME_SCREEN, LOGIN_SCREEN)
             } catch (e: FirebaseAuthException) {
                 SnackbarManager.showMessage(AppText.error_firebase_on_user_creation)
-                Log.d(TAG, "onSignUpClick: ${e.message} -> ${e.localizedMessage}")
             } catch (e: Exception) {
                 SnackbarManager.showMessage(AppText.unknow_error)
-                Log.d(TAG, "onSignUpClick: ${e.message} -> ${e.localizedMessage}")
             }
             uiState.value = uiState.value.copy(isLoading = false)
         }
@@ -75,7 +71,7 @@ class LoginViewModel @Inject constructor(
             return
         }
 
-        launchCatching {
+        viewModelScope.launch {
             accountService.sendRecoveryEmail(email)
             SnackbarManager.showMessage(AppText.recovery_email_sent)
         }

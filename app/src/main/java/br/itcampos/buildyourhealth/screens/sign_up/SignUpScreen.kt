@@ -27,6 +27,7 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import br.itcampos.buildyourhealth.commom.BasicButton
 import br.itcampos.buildyourhealth.commom.BasicDivider
 import br.itcampos.buildyourhealth.commom.BasicTextField
+import br.itcampos.buildyourhealth.commom.CircularProgressComposable
 import br.itcampos.buildyourhealth.commom.ClickableLoginText
 import br.itcampos.buildyourhealth.commom.HeadingText
 import br.itcampos.buildyourhealth.commom.NormalText
@@ -97,7 +98,7 @@ fun SignUpScreenContent(
             )
 
             if (uiState.isLoading) {
-                CircularProgressIndicator(modifier = modifier.align(CenterHorizontally))
+                CircularProgressComposable()
             }
 
             Spacer(modifier = modifier.height(20.dp))
