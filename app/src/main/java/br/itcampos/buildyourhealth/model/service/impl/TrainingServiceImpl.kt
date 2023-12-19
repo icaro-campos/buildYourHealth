@@ -139,6 +139,40 @@ class TrainingServiceImpl @Inject constructor(
         }
     }
 
+    override suspend fun getTrainingDetails(trainingId: String): Result<Training> {
+        return try {
+            withContext(ioDispatcher) {
+                val getTrainingDetailsTimeout = withTimeoutOrNull(10000L) {
+                    val documentSnapshot = buildYourHealthAppDb.collection(TRAINING_COLLECTION)
+                        .document(trainingId)
+                        .get()
+                        .await()
+
+                    if (documentSnapshot.exists()) {
+                        val training = Training(
+                            trainingId = documentSnapshot.id,
+                            userId = documentSnapshot.getString("userId") ?: "",
+                            name = documentSnapshot.getString("name") ?: "",
+                            description = documentSnapshot.getString("description") ?: "",
+                            date = documentSnapshot.getString("date") ?: ""
+                        )
+                        Result.Success(training)
+                    } else {
+                        Result.Failure(IllegalStateException("Treino não encontrado."))
+                    }
+                }
+
+                if (getTrainingDetailsTimeout == null) {
+                    Result.Failure(IllegalStateException("Verifique a sua internet."))
+                } else {
+                    getTrainingDetailsTimeout
+                }
+            }
+        } catch (e: Exception) {
+            Result.Failure(exception = e)
+        }
+    }
+
     companion object {
         private const val EXERCISE_COLLECTION = "exercises"
         private const val TRAINING_COLLECTION = "trainings"

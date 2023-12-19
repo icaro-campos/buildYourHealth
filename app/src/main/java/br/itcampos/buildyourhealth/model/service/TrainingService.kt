@@ -8,4 +8,6 @@ interface TrainingService {
     suspend fun getAllTrainings(): Result<List<Training>>
     suspend fun updateTraining(trainingId: String, name: String, description: String, date: String): Result<Unit>
     suspend fun deleteTraining(trainingId: String): Result<Unit>
+
+    suspend fun getTrainingDetails(trainingId: String): Result<Training>
 }

@@ -21,7 +21,11 @@ import br.itcampos.buildyourhealth.ui.theme.Primary
 import br.itcampos.buildyourhealth.ui.theme.Secondary
 
 @Composable
-fun BasicButton(modifier: Modifier = Modifier, value: String, onClick: () -> Unit) {
+fun BasicButton(
+    modifier: Modifier = Modifier,
+    value: String,
+    onClick: () -> Unit
+) {
     Button(
         onClick = onClick,
         modifier = modifier

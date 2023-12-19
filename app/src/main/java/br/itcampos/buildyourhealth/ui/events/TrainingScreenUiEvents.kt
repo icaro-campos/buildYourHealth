@@ -4,6 +4,8 @@ import br.itcampos.buildyourhealth.model.Training
 
 sealed class TrainingScreenUiEvents {
 
+    object GetTrainings : TrainingScreenUiEvents()
+
     data class AddTraining(val name: String, val description: String, val date: String) :
         TrainingScreenUiEvents()
 
@@ -15,5 +17,11 @@ sealed class TrainingScreenUiEvents {
 
     data class OnChangeTrainingDate(val date: String) : TrainingScreenUiEvents()
 
+    data class OnChangeAddTrainingDialogState(val show: Boolean) : TrainingScreenUiEvents()
+
     data class SetTrainingToBeUpdated(val trainingToBeUpdated: Training) : TrainingScreenUiEvents()
+
+    data class DeleteTraining(val trainingId: String) : TrainingScreenUiEvents()
+    data class GetTrainingDetails(val trainingId: String) : TrainingScreenUiEvents()
+
 }

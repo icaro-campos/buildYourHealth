@@ -3,6 +3,7 @@ package br.itcampos.buildyourhealth.navigation
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.Composable
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
@@ -21,6 +22,7 @@ import br.itcampos.buildyourhealth.screens.training.TrainingScreen
 @Composable
 fun AppNavigationGraph() {
     val navController = rememberNavController()
+
     NavHost(navController = navController, startDestination = LOGIN_SCREEN) {
         composable(LOGIN_SCREEN) {
             LoginScreen(openAndPopUp = { route, popUp ->
@@ -47,13 +49,15 @@ fun AppNavigationGraph() {
             })
         }
         composable(
-            route = TRAINING_SCREEN,
+            route = "$TRAINING_SCREEN/{$TRAINING_ID}",
             arguments = listOf(navArgument(TRAINING_ID) {
                 nullable = true
                 defaultValue = null
             })
         ) {
-            TrainingScreen(popUpScreen = { navController.popBackStack() })
+            TrainingScreen(
+                popUpScreen = { navController.popBackStack() }
+            )
         }
     }
 }
