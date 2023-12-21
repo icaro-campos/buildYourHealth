@@ -1,9 +1,11 @@
 package br.itcampos.buildyourhealth.screens.training
 
+import android.util.Log
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import br.itcampos.buildyourhealth.commom.Result
+import br.itcampos.buildyourhealth.model.Training
 import br.itcampos.buildyourhealth.model.service.TrainingService
 import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_ID
 import br.itcampos.buildyourhealth.ui.events.TrainingScreenUiEvents
@@ -46,6 +48,7 @@ class TrainingViewModel @Inject constructor(
 
     init {
         val trainingId = savedStateHandle.get<String>(TRAINING_ID)
+        Log.d(TAG, "Training ID from SavedStateHandle: $trainingId")
         val oldState = state.value
         if (trainingId != null) {
             getTrainingDetails(oldState, trainingId)
@@ -62,13 +65,154 @@ class TrainingViewModel @Inject constructor(
             is TrainingScreenUiEvents.DeleteTraining -> TODO()
             is TrainingScreenUiEvents.OnChangeAddTrainingDialogState -> TODO()
             is TrainingScreenUiEvents.AddTraining -> TODO()
-            TrainingScreenUiEvents.GetTrainings -> TODO()
-            is TrainingScreenUiEvents.OnChangeTrainingDate -> TODO()
-            is TrainingScreenUiEvents.OnChangeTrainingDescription -> TODO()
-            is TrainingScreenUiEvents.OnChangeTrainingName -> TODO()
-            is TrainingScreenUiEvents.SetTrainingToBeUpdated -> TODO()
-            TrainingScreenUiEvents.UpdateTraining -> TODO()
+
+            TrainingScreenUiEvents.GetTrainings -> {
+                getAllTasks(oldState = oldState)
+            }
+
+            is TrainingScreenUiEvents.OnChangeTrainingDate -> {
+                onChangeTrainingDate(oldState = oldState, date = event.date)
+            }
+
+            is TrainingScreenUiEvents.OnChangeTrainingDescription -> {
+                onChangeTrainingDescription(oldState = oldState, description = event.description)
+            }
+
+            is TrainingScreenUiEvents.OnChangeTrainingName -> {
+                onChangeTrainingName(oldState = oldState, name = event.name)
+            }
+
+            is TrainingScreenUiEvents.SetTrainingToBeUpdated -> {
+                setTrainingToBeUpdated(
+                    oldState = oldState,
+                    training = event.trainingToBeUpdated
+                )
+            }
+
+            TrainingScreenUiEvents.UpdateTraining -> {
+                updateTraining(oldState = oldState)
+            }
+
+            is TrainingScreenUiEvents.OnChangeUpdateTrainingDialogState -> {
+                onChangeUpdateTrainingDialogState(
+                    oldState = oldState,
+                    isShown = event.show
+                )
+            }
         }
+    }
+
+    private fun getAllTasks(oldState: TrainingScreenUiState) {
+        viewModelScope.launch {
+            setState(oldState.copy(isLoading = true))
+            when (val result = trainingService.getAllTrainings()) {
+                is Result.Failure -> {
+                    setState(oldState.copy(isLoading = false))
+                    val errorMessage = result.exception.message ?: "Um erro ao buscar os Treinos"
+                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = errorMessage) }
+                }
+
+                is Result.Success -> {
+                    setState(oldState.copy(isLoading = false, trainings = result.data))
+                }
+            }
+        }
+    }
+
+    private fun updateTraining(oldState: TrainingScreenUiState) {
+        viewModelScope.launch {
+            setState(
+                oldState.copy(
+                    isLoading = true
+                )
+            )
+
+            val name = oldState.currentTextFieldName
+            val description = oldState.currentTextFieldDescription
+            val date = oldState.currentTextFieldDate
+            val trainingToBeUpdated = oldState.trainingToBeUpdated
+
+            when (val result = trainingService.updateTraining(
+                name = name,
+                description = description,
+                date = date,
+                trainingId = trainingToBeUpdated?.trainingId ?: ""
+            )
+            ) {
+                is Result.Failure -> {
+                    setState(
+                        oldState.copy(
+                            isLoading = false
+                        )
+                    )
+
+                    val errorMessage =
+                        result.exception.message ?: "Um erro ocorreu ao atualizar o Treino"
+
+                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = errorMessage) }
+                }
+
+                is Result.Success -> {
+                    Log.d(TAG, "Result.data: ${result.data}")
+                    setState(
+                        oldState.copy(
+                            isLoading = false,
+                            currentTextFieldName = "",
+                            currentTextFieldDescription = "",
+                            currentTextFieldDate = ""
+                        )
+                    )
+
+                    sendEvent(
+                        event = TrainingScreenUiEvents.OnChangeUpdateTrainingDialogState(
+                            show = false
+                        )
+                    )
+
+                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = "Treino atualizado com sucesso!") }
+
+                    sendEvent(TrainingScreenUiEvents.GetTrainings)
+
+                    val updatedTrainingId = trainingToBeUpdated?.trainingId
+                    Log.d(TAG, "trainingDetails.value: ${trainingToBeUpdated}")
+                    Log.d(TAG, "TrainingId $updatedTrainingId")
+
+                    sendEvent(TrainingScreenUiEvents.GetTrainingDetails(updatedTrainingId ?: ""))
+                }
+            }
+        }
+    }
+
+    private fun setTrainingToBeUpdated(oldState: TrainingScreenUiState, training: Training) {
+        Log.d(TAG, "Training to be updated is here $training.")
+        setState(
+            oldState.copy(
+                trainingToBeUpdated = training
+            )
+        )
+    }
+
+    private fun onChangeUpdateTrainingDialogState(
+        oldState: TrainingScreenUiState,
+        isShown: Boolean
+    ) {
+        setState(
+            oldState.copy(
+                isShowUpdateTrainingDialog = isShown
+            )
+        )
+    }
+
+    private fun onChangeTrainingDate(oldState: TrainingScreenUiState, date: String) {
+        setState(oldState.copy(currentTextFieldDate = date))
+    }
+
+    private fun onChangeTrainingDescription(oldState: TrainingScreenUiState, description: String) {
+        setState(oldState.copy(currentTextFieldDescription = description))
+    }
+
+    private fun onChangeTrainingName(oldState: TrainingScreenUiState, name: String) {
+        setState(oldState.copy(currentTextFieldName = name))
     }
 
     private fun getTrainingDetails(oldState: TrainingScreenUiState, trainingId: String) {
@@ -101,5 +245,6 @@ class TrainingViewModel @Inject constructor(
     companion object {
         private const val UTC = "UTC"
         private const val DATE_FORMAT = "EEE, d MMM yyyy"
+        private const val TAG = "TrainingViewModel"
     }
 }

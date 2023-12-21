@@ -156,7 +156,7 @@ fun HomeScreenContent(
             TopAppBar(
                 elevation = 1.dp,
                 modifier = Modifier.wrapContentSize(Alignment.TopEnd),
-                title = { Text("Treinos", color = Primary) },
+                title = { Text("Treinos") },
                 backgroundColor = Color.Unspecified
             )
         },

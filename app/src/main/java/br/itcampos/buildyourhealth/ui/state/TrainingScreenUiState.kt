@@ -9,6 +9,7 @@ data class TrainingScreenUiState(
     val errorMessage: String? = null,
     val trainingToBeUpdated: Training? = null,
     val isShowAddTrainingDialog: Boolean = false,
+    val isShowUpdateTrainingDialog: Boolean = false,
     val currentTextFieldName: String = "",
     val currentTextFieldDescription: String = "",
     val currentTextFieldDate: String = "",

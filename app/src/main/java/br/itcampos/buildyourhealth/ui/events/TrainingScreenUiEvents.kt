@@ -19,6 +19,8 @@ sealed class TrainingScreenUiEvents {
 
     data class OnChangeAddTrainingDialogState(val show: Boolean) : TrainingScreenUiEvents()
 
+    data class OnChangeUpdateTrainingDialogState(val show: Boolean) : TrainingScreenUiEvents()
+
     data class SetTrainingToBeUpdated(val trainingToBeUpdated: Training) : TrainingScreenUiEvents()
 
     data class DeleteTraining(val trainingId: String) : TrainingScreenUiEvents()

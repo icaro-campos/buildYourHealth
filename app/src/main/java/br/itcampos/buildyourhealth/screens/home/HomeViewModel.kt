@@ -94,6 +94,7 @@ class HomeViewModel @Inject constructor(
             }
 
             is TrainingScreenUiEvents.GetTrainingDetails -> TODO()
+            is TrainingScreenUiEvents.OnChangeUpdateTrainingDialogState -> TODO()
         }
     }
 

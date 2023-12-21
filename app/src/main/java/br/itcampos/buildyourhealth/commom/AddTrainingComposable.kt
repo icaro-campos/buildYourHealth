@@ -29,7 +29,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import br.itcampos.buildyourhealth.screens.training.CardEditors
 import br.itcampos.buildyourhealth.ui.state.TrainingScreenUiState
 import br.itcampos.buildyourhealth.ui.theme.Primary
 

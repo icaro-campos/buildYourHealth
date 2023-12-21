@@ -2,7 +2,6 @@ package br.itcampos.buildyourhealth.model.service.impl
 
 import android.util.Log
 import br.itcampos.buildyourhealth.commom.Result
-import br.itcampos.buildyourhealth.commom.convertDateFormat
 import br.itcampos.buildyourhealth.model.Training
 import br.itcampos.buildyourhealth.model.service.AccountService
 import br.itcampos.buildyourhealth.model.service.TrainingService
@@ -95,6 +94,11 @@ class TrainingServiceImpl @Inject constructor(
     ): Result<Unit> {
         return try {
             withContext(ioDispatcher) {
+                Log.d(TAG, "Updating training with ID: $trainingId")
+                if (trainingId.isEmpty()) {
+                    Log.e(TAG, "Invalid trainingId. It is empty.")
+                    return@withContext Result.Failure(IllegalArgumentException("Invalid trainingId"))
+                }
                 val trainingUpdated: Map<String, String> = hashMapOf(
                     "name" to name,
                     "description" to description,
@@ -102,6 +106,7 @@ class TrainingServiceImpl @Inject constructor(
                 )
 
                 val updateTrainingTimeout = withTimeoutOrNull(10000L) {
+                    Log.d(TAG, "Updating training with ID: $trainingId")
                     buildYourHealthAppDb.collection(TRAINING_COLLECTION)
                         .document(trainingId)
                         .update(trainingUpdated)
@@ -111,9 +116,11 @@ class TrainingServiceImpl @Inject constructor(
                     Result.Failure(IllegalStateException("Verifique a sua internet."))
                 }
 
+                Log.d(TAG, "Training updated successfully.")
                 Result.Success(Unit)
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Exception during updateTraining: $e")
             Result.Failure(exception = e)
         }
     }
@@ -178,6 +185,6 @@ class TrainingServiceImpl @Inject constructor(
         private const val TRAINING_COLLECTION = "trainings"
         private const val TRAINING_ID = "id"
         private const val USER_ID_FIELD = "userId"
-        private const val TAG = "ExerciseServiceImpl"
+        private const val TAG = "TrainingServiceImpl"
     }
 }
