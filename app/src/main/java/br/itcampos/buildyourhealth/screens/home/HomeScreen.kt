@@ -28,7 +28,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.IconButtonColors
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHost
@@ -42,18 +41,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.compose.rememberNavController
 import br.itcampos.buildyourhealth.commom.AddTrainingComposable
 import br.itcampos.buildyourhealth.commom.CircularProgressComposable
 import br.itcampos.buildyourhealth.commom.EmptyScreen
 import br.itcampos.buildyourhealth.commom.convertDateFormat
 import br.itcampos.buildyourhealth.model.Training
 import br.itcampos.buildyourhealth.navigation.Routes.SIDE_EFFECTS_KEY
-import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_ID
-import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_SCREEN
-import br.itcampos.buildyourhealth.ui.events.TrainingScreenUiEvents
+import br.itcampos.buildyourhealth.ui.events.HomeScreenUiEvents
 import br.itcampos.buildyourhealth.ui.side_effects.ScreenUiSideEffect
-import br.itcampos.buildyourhealth.ui.state.TrainingScreenUiState
+import br.itcampos.buildyourhealth.ui.state.HomeScreenUiState
 import br.itcampos.buildyourhealth.ui.theme.Primary
 import kotlinx.coroutines.flow.onEach
 import java.time.LocalDate
@@ -74,14 +70,14 @@ fun HomeScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(key1 = SIDE_EFFECTS_KEY) {
-        viewModel.sendEvent(TrainingScreenUiEvents.GetTrainings)
+        viewModel.sendEvent(HomeScreenUiEvents.GetTrainings)
         effects.onEach { effect ->
             when (effect) {
                 is ScreenUiSideEffect.ShowSnackbarMessage -> {
                     snackbarHostState.showSnackbar(
                         message = effect.message,
                         duration = SnackbarDuration.Short,
-                        actionLabel = "DISMISS"
+                        actionLabel = "FECHAR"
                     )
                 }
             }
@@ -106,7 +102,7 @@ fun HomeScreen(
 @Composable
 fun HomeScreenContent(
     snackbarHostState: SnackbarHostState,
-    uiState: TrainingScreenUiState,
+    uiState: HomeScreenUiState,
     events: HomeViewModel,
     modifier: Modifier = Modifier,
     trainings: List<Training>,
@@ -118,22 +114,22 @@ fun HomeScreenContent(
             uiState = uiState,
             setTrainingName = { name ->
                 events.sendEvent(
-                    event = TrainingScreenUiEvents.OnChangeTrainingName(name = name)
+                    event = HomeScreenUiEvents.OnChangeTrainingName(name = name)
                 )
             },
             setTrainingDescription = { description ->
                 events.sendEvent(
-                    event = TrainingScreenUiEvents.OnChangeTrainingDescription(description = description)
+                    event = HomeScreenUiEvents.OnChangeTrainingDescription(description = description)
                 )
             },
             setTrainingDate = { date ->
                 events.sendEvent(
-                    event = TrainingScreenUiEvents.OnChangeTrainingDate(date = date)
+                    event = HomeScreenUiEvents.OnChangeTrainingDate(date = date)
                 )
             },
             addTraining = {
                 events.sendEvent(
-                    event = TrainingScreenUiEvents.AddTraining(
+                    event = HomeScreenUiEvents.AddTraining(
                         name = uiState.currentTextFieldName,
                         description = uiState.currentTextFieldDescription,
                         date = uiState.currentTextFieldDate
@@ -142,7 +138,7 @@ fun HomeScreenContent(
             },
             closeDialog = {
                 events.sendEvent(
-                    event = TrainingScreenUiEvents.OnChangeAddTrainingDialogState(show = false)
+                    event = HomeScreenUiEvents.OnChangeAddTrainingDialogState(show = false)
                 )
             }
         )
@@ -164,7 +160,7 @@ fun HomeScreenContent(
             FloatingActionButton(
                 onClick = {
                     events.sendEvent(
-                        event = TrainingScreenUiEvents.OnChangeAddTrainingDialogState(
+                        event = HomeScreenUiEvents.OnChangeAddTrainingDialogState(
                             show = true
                         )
                     )
@@ -197,7 +193,7 @@ fun HomeScreenContent(
                             training = training,
                             deleteTraining = { trainingId ->
                                 events.sendEvent(
-                                    event = TrainingScreenUiEvents.DeleteTraining(
+                                    event = HomeScreenUiEvents.DeleteTraining(
                                         trainingId = trainingId
                                     )
                                 )

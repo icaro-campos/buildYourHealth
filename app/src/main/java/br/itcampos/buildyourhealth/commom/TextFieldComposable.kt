@@ -109,20 +109,20 @@ fun PasswordTextField(
         onValueChange = { onNewValue(it) },
         leadingIcon = { Icon(imageVector = icon, contentDescription = "Icon") },
         trailingIcon = {
-            val icon = if (passwordVisible.value) {
+            val iconPassword = if (passwordVisible.value) {
                 Icons.Outlined.Visibility
             } else {
                 Icons.Outlined.VisibilityOff
             }
 
-            var descriptionContent = if (passwordVisible.value) {
+            val descriptionContent = if (passwordVisible.value) {
                 stringResource(AppText.hide_password)
             } else {
                 stringResource(AppText.show_password)
             }
 
             IconButton(onClick = { passwordVisible.value = !passwordVisible.value }) {
-                Icon(imageVector = icon, contentDescription = descriptionContent)
+                Icon(imageVector = iconPassword, contentDescription = descriptionContent)
             }
         },
         visualTransformation = if (passwordVisible.value) VisualTransformation.None else

@@ -62,10 +62,6 @@ class TrainingViewModel @Inject constructor(
                 getTrainingDetails(oldState = oldState, trainingId = event.trainingId)
             }
 
-            is TrainingScreenUiEvents.DeleteTraining -> TODO()
-            is TrainingScreenUiEvents.OnChangeAddTrainingDialogState -> TODO()
-            is TrainingScreenUiEvents.AddTraining -> TODO()
-
             TrainingScreenUiEvents.GetTrainings -> {
                 getAllTasks(oldState = oldState)
             }
@@ -153,7 +149,6 @@ class TrainingViewModel @Inject constructor(
                 }
 
                 is Result.Success -> {
-                    Log.d(TAG, "Result.data: ${result.data}")
                     setState(
                         oldState.copy(
                             isLoading = false,
@@ -173,18 +168,17 @@ class TrainingViewModel @Inject constructor(
 
                     sendEvent(TrainingScreenUiEvents.GetTrainings)
 
-                    val updatedTrainingId = trainingToBeUpdated?.trainingId
-                    Log.d(TAG, "trainingDetails.value: ${trainingToBeUpdated}")
-                    Log.d(TAG, "TrainingId $updatedTrainingId")
-
+                    val updatedTrainingId = oldState.trainingToBeUpdated?.trainingId
                     sendEvent(TrainingScreenUiEvents.GetTrainingDetails(updatedTrainingId ?: ""))
                 }
             }
         }
+
+
+
     }
 
     private fun setTrainingToBeUpdated(oldState: TrainingScreenUiState, training: Training) {
-        Log.d(TAG, "Training to be updated is here $training.")
         setState(
             oldState.copy(
                 trainingToBeUpdated = training
@@ -243,8 +237,6 @@ class TrainingViewModel @Inject constructor(
     }
 
     companion object {
-        private const val UTC = "UTC"
-        private const val DATE_FORMAT = "EEE, d MMM yyyy"
         private const val TAG = "TrainingViewModel"
     }
 }

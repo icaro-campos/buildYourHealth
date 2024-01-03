@@ -5,11 +5,10 @@ import androidx.lifecycle.viewModelScope
 import br.itcampos.buildyourhealth.commom.Result
 import br.itcampos.buildyourhealth.model.Training
 import br.itcampos.buildyourhealth.model.service.TrainingService
-import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_ID
 import br.itcampos.buildyourhealth.navigation.Routes.TRAINING_SCREEN
-import br.itcampos.buildyourhealth.ui.events.TrainingScreenUiEvents
+import br.itcampos.buildyourhealth.ui.events.HomeScreenUiEvents
 import br.itcampos.buildyourhealth.ui.side_effects.ScreenUiSideEffect
-import br.itcampos.buildyourhealth.ui.state.TrainingScreenUiState
+import br.itcampos.buildyourhealth.ui.state.HomeScreenUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -24,29 +23,53 @@ class HomeViewModel @Inject constructor(
     private val trainingService: TrainingService
 ) : ViewModel() {
 
-    private val _state: MutableStateFlow<TrainingScreenUiState> =
-        MutableStateFlow(TrainingScreenUiState())
-    val state: StateFlow<TrainingScreenUiState> = _state.asStateFlow()
+    private val _state: MutableStateFlow<HomeScreenUiState> =
+        MutableStateFlow(HomeScreenUiState())
+    val state: StateFlow<HomeScreenUiState> = _state.asStateFlow()
 
     private val _effect: Channel<ScreenUiSideEffect> = Channel()
     val effect = _effect.receiveAsFlow()
 
-    fun sendEvent(event: TrainingScreenUiEvents) {
+    fun sendEvent(event: HomeScreenUiEvents) {
         reduce(event = event, oldState = state.value)
     }
 
-    private fun setState(newState: TrainingScreenUiState) {
+    private fun setState(newState: HomeScreenUiState) {
         _state.value = newState
     }
 
-    private fun setEffects(buiilder: () -> ScreenUiSideEffect) {
-        val effectValue = buiilder()
+    private fun setEffects(builder: () -> ScreenUiSideEffect) {
+        val effectValue = builder()
         viewModelScope.launch { _effect.send(effectValue) }
     }
 
-    private fun reduce(event: TrainingScreenUiEvents, oldState: TrainingScreenUiState) {
+    private fun reduce(event: HomeScreenUiEvents, oldState: HomeScreenUiState) {
         when (event) {
-            is TrainingScreenUiEvents.AddTraining -> {
+
+            is HomeScreenUiEvents.OnChangeTrainingName -> {
+                onChangeTrainingName(oldState = oldState, name = event.name)
+            }
+
+            is HomeScreenUiEvents.OnChangeTrainingDescription -> {
+                onChangeTrainingDescription(oldState = oldState, description = event.description)
+            }
+
+            is HomeScreenUiEvents.OnChangeTrainingDate -> {
+                onChangeTrainingDate(oldState = oldState, date = event.date)
+            }
+
+            is HomeScreenUiEvents.OnChangeAddTrainingDialogState -> {
+                onChangeAddTrainingDialogState(
+                    oldState = oldState,
+                    isShow = event.show
+                )
+            }
+
+            HomeScreenUiEvents.GetTrainings -> {
+                getAllTasks(oldState = oldState)
+            }
+
+            is HomeScreenUiEvents.AddTraining -> {
                 addTraining(
                     oldState = oldState,
                     name = event.name,
@@ -55,87 +78,28 @@ class HomeViewModel @Inject constructor(
                 )
             }
 
-            is TrainingScreenUiEvents.OnChangeTrainingDescription -> {
-                onChangeTrainingDescription(oldState = oldState, description = event.description)
-            }
-
-            is TrainingScreenUiEvents.OnChangeTrainingName -> {
-                onChangeTrainingName(oldState = oldState, name = event.name)
-            }
-
-            is TrainingScreenUiEvents.OnChangeTrainingDate -> {
-                onChangeTrainingDate(oldState = oldState, date = event.date)
-            }
-
-            is TrainingScreenUiEvents.SetTrainingToBeUpdated -> {
-                setTrainingToBeUpdated(oldState = oldState, training = event.trainingToBeUpdated)
-            }
-
-            TrainingScreenUiEvents.UpdateTraining -> {
-                updateTask(oldState = oldState)
-            }
-
-            TrainingScreenUiEvents.GetTrainings -> {
-                getAllTasks(oldState = oldState)
-            }
-
-            is TrainingScreenUiEvents.OnChangeAddTrainingDialogState -> {
-                onChangeAddTrainingDialogState(
-                    oldState = oldState,
-                    isShow = event.show
-                )
-            }
-
-            is TrainingScreenUiEvents.DeleteTraining -> {
+            is HomeScreenUiEvents.DeleteTraining -> {
                 deleteTraining(
                     oldState = oldState,
                     trainingId = event.trainingId
                 )
             }
-
-            is TrainingScreenUiEvents.GetTrainingDetails -> TODO()
-            is TrainingScreenUiEvents.OnChangeUpdateTrainingDialogState -> TODO()
         }
     }
 
-    private fun deleteTraining(oldState: TrainingScreenUiState, trainingId: String) {
-        viewModelScope.launch {
-            setState(
-                oldState.copy(
-                    isLoading = true
-                )
-            )
-
-            when (val result = trainingService.deleteTraining(trainingId)) {
-                is Result.Failure -> {
-                    setState(
-                        oldState.copy(
-                            isLoading = false
-                        )
-                    )
-
-                    val errorMessage =
-                        result.exception.message ?: "Um erro ocorreu ao deletar a Tarefa"
-
-                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = errorMessage) }
-                }
-
-                is Result.Success -> {
-                    setState(
-                        oldState.copy(
-                            isLoading = false
-                        )
-                    )
-
-                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = "Tarefa deletada com sucesso") }
-
-                    sendEvent(TrainingScreenUiEvents.GetTrainings)
-                }
-            }
-        }
+    private fun onChangeTrainingName(oldState: HomeScreenUiState, name: String) {
+        setState(oldState.copy(currentTextFieldName = name))
     }
 
-    private fun onChangeAddTrainingDialogState(oldState: TrainingScreenUiState, isShow: Boolean) {
+    private fun onChangeTrainingDescription(oldState: HomeScreenUiState, description: String) {
+        setState(oldState.copy(currentTextFieldDescription = description))
+    }
+
+    private fun onChangeTrainingDate(oldState: HomeScreenUiState, date: String) {
+        setState(oldState.copy(currentTextFieldDate = date))
+    }
+
+    private fun onChangeAddTrainingDialogState(oldState: HomeScreenUiState, isShow: Boolean) {
         setState(
             oldState.copy(
                 isShowAddTrainingDialog = isShow
@@ -143,7 +107,7 @@ class HomeViewModel @Inject constructor(
         )
     }
 
-    private fun getAllTasks(oldState: TrainingScreenUiState) {
+    private fun getAllTasks(oldState: HomeScreenUiState) {
         viewModelScope.launch {
             setState(oldState.copy(isLoading = true))
             when (val result = trainingService.getAllTrainings()) {
@@ -160,64 +124,8 @@ class HomeViewModel @Inject constructor(
         }
     }
 
-    private fun updateTask(oldState: TrainingScreenUiState) {
-        viewModelScope.launch {
-            setState(oldState.copy(isLoading = true))
-
-            val name = oldState.currentTextFieldName
-            val description = oldState.currentTextFieldDescription
-            val date = oldState.currentTextFieldDate
-            val trainingToBeUpdated = oldState.trainingToBeUpdated
-
-            when (val result = trainingService.updateTraining(
-                name = name,
-                description = description,
-                date = date,
-                trainingId = trainingToBeUpdated?.trainingId ?: ""
-            )) {
-                is Result.Failure -> {
-                    setState(oldState.copy(isLoading = false))
-
-                    val errorMessage =
-                        result.exception.message ?: "Um erro ocorreu ao atualizar a Tarefa."
-
-                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = errorMessage) }
-                }
-
-                is Result.Success -> {
-                    setState(
-                        oldState.copy(
-                            isLoading = false,
-                            currentTextFieldName = "",
-                            currentTextFieldDescription = "",
-                            currentTextFieldDate = ""
-                        )
-                    )
-
-                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = "Tarefa atualizada com sucesso.") }
-                }
-            }
-        }
-    }
-
-    private fun setTrainingToBeUpdated(oldState: TrainingScreenUiState, training: Training) {
-        setState(oldState.copy(trainingToBeUpdated = training))
-    }
-
-    private fun onChangeTrainingDate(oldState: TrainingScreenUiState, date: String) {
-        setState(oldState.copy(currentTextFieldDate = date))
-    }
-
-    private fun onChangeTrainingName(oldState: TrainingScreenUiState, name: String) {
-        setState(oldState.copy(currentTextFieldName = name))
-    }
-
-    private fun onChangeTrainingDescription(oldState: TrainingScreenUiState, description: String) {
-        setState(oldState.copy(currentTextFieldDescription = description))
-    }
-
     private fun addTraining(
-        oldState: TrainingScreenUiState,
+        oldState: HomeScreenUiState,
         name: String,
         description: String,
         date: String
@@ -248,7 +156,44 @@ class HomeViewModel @Inject constructor(
 
                     setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = "Tarefa adicionanda com sucesso") }
 
-                    sendEvent(TrainingScreenUiEvents.GetTrainings)
+                    sendEvent(HomeScreenUiEvents.GetTrainings)
+                }
+            }
+        }
+    }
+
+    private fun deleteTraining(oldState: HomeScreenUiState, trainingId: String) {
+        viewModelScope.launch {
+            setState(
+                oldState.copy(
+                    isLoading = true
+                )
+            )
+
+            when (val result = trainingService.deleteTraining(trainingId)) {
+                is Result.Failure -> {
+                    setState(
+                        oldState.copy(
+                            isLoading = false
+                        )
+                    )
+
+                    val errorMessage =
+                        result.exception.message ?: "Um erro ocorreu ao deletar a Tarefa"
+
+                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = errorMessage) }
+                }
+
+                is Result.Success -> {
+                    setState(
+                        oldState.copy(
+                            isLoading = false
+                        )
+                    )
+
+                    setEffects { ScreenUiSideEffect.ShowSnackbarMessage(message = "Tarefa deletada com sucesso") }
+
+                    sendEvent(HomeScreenUiEvents.GetTrainings)
                 }
             }
         }

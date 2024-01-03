@@ -29,7 +29,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
-import br.itcampos.buildyourhealth.ui.state.TrainingScreenUiState
+import br.itcampos.buildyourhealth.ui.state.HomeScreenUiState
 import br.itcampos.buildyourhealth.ui.theme.Primary
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -40,7 +40,7 @@ fun AddTrainingComposable(
     setTrainingDate: (String) -> Unit,
     addTraining: () -> Unit,
     closeDialog: () -> Unit,
-    uiState: TrainingScreenUiState
+    uiState: HomeScreenUiState
 ) {
 
     Dialog(onDismissRequest = { closeDialog() }) {
@@ -131,6 +131,7 @@ fun AddTrainingComposable(
                                     addTraining()
                                     setTrainingName("")
                                     setTrainingDescription("")
+                                    setTrainingDate("")
                                     closeDialog()
                                 },
                                 modifier = Modifier.padding(horizontal = 12.dp),

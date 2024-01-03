@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.SavedStateHandle
+import br.itcampos.buildyourhealth.commom.CircularProgressComposable
 import br.itcampos.buildyourhealth.commom.EmptyScreen
 import br.itcampos.buildyourhealth.commom.UpdateTrainingComposable
 import br.itcampos.buildyourhealth.model.Training
@@ -72,7 +73,7 @@ fun TrainingScreen(
                     snackbarHostState.showSnackbar(
                         message = effect.message,
                         duration = SnackbarDuration.Short,
-                        actionLabel = "DISMISS"
+                        actionLabel = "FECHAR"
                     )
                 }
             }
@@ -185,6 +186,9 @@ fun TrainingDetailsScreen(
         Box(
             modifier = Modifier.padding(paddingValues = paddingValues)
         ) {
+            when {
+                uiState.isLoading -> CircularProgressComposable()
+            }
             Card(
                 elevation = CardDefaults.cardElevation(
                     defaultElevation = 6.dp
